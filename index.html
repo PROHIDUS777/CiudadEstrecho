@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<!--
+  PANTALLA DE CARGA ESTILO GTA — "ciudad estrecho 1"
+  ---------------------------------------------------
+  Guarda este archivo como index.html en una carpeta junto a:
+    - logo.png / .jpg / .jpeg  (el logo del título; si falta se muestra texto)
+    - pricedown.ttf            (opcional: se usa en "ESTRENO 2027"; si falta, Anton)
+    - Photo1, Photo2, Photo3 ... en .jpg, .jpeg, .png o .webp (las que quieras)
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ciudad estrecho 1 — Próximamente</title>
+
+<!-- Fuentes de respaldo: Anton (logo) y Oswald (texto de interfaz) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  /* ---------- Tipografía ---------- */
+  /* Fuente local Pricedown. Si pricedown.ttf no existe, el navegador
+     pasa automáticamente a 'Anton' (ver --font-logo más abajo). */
+  @font-face {
+    font-family: 'Pricedown';
+    src: local('Pricedown'), local('Pricedown Bl'), local('Pricedown Black'),
+         url('pricedown.ttf')    format('truetype'),
+         url('Pricedown.ttf')    format('truetype'),
+         url('pricedown.otf')    format('opentype'),
+         url('Pricedown.otf')    format('opentype'),
+         url('pricedown bl.ttf') format('truetype'),
+         url('Pricedown Bl.ttf') format('truetype'),
+         url('pricedown.woff2')  format('woff2'),
+         url('pricedown.woff')   format('woff');
+    font-display: swap;
+  }
+
+  :root {
+    --font-logo: 'Pricedown', 'Anton', Impact, 'Arial Black', sans-serif;
+    --font-ui: 'Oswald', 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+    --slide-time: 5000ms;   /* tiempo entre diapositivas (también se lee en JS) */
+    --fade-time: 1500ms;    /* duración del crossfade */
+  }
+
+  /* ---------- Base: pantalla completa sin scroll ---------- */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* Fondo de emergencia (atardecer) por si aún no hay fotos cargadas */
+  body {
+    background:
+      radial-gradient(ellipse at 50% 110%, #ff7a3d 0%, #b8325a 35%, #2a1445 70%, #0a0614 100%);
+  }
+
+  /* ---------- Diapositivas con efecto Ken Burns ---------- */
+  .stage { position: fixed; inset: 0; overflow: hidden; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    z-index: 0;
+    transition: opacity var(--fade-time) ease-in-out;
+    will-change: transform, opacity;
+  }
+  /* La diapositiva entrante se funde por ENCIMA de la saliente,
+     que se mantiene opaca debajo: así el crossfade no "parpadea" a negro. */
+  .slide.prev   { opacity: 1; z-index: 1; }
+  .slide.active { opacity: 1; z-index: 2; }
+
+  /* Zoom lento + desplazamiento; los valores --x0, --s0... se aleatorizan por JS */
+  .slide.kb { animation: kenburns 8s linear forwards; }
+
+  @keyframes kenburns {
+    from { transform: translate(var(--x0, 0%), var(--y0, 0%)) scale(var(--s0, 1.1)); }
+    to   { transform: translate(var(--x1, 0%), var(--y1, 0%)) scale(var(--s1, 1.28)); }
+  }
+
+  /* ---------- Viñeta oscura ---------- */
+  .vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(0,0,0,.78) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,.35) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 65%, rgba(0,0,0,.55) 100%);
+  }
+
+  /* ---------- Contenido central ---------- */
+  .content {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4vw 6vh;
+    text-align: center;
+  }
+
+  /* Estilo logo GTA: relleno blanco con degradado, borde negro grueso y sombra dura.
+     El borde y la sombra viven en ::before (copia del texto en data-text) para que
+     el relleno con degradado quede limpio por encima. */
+  .gta-text {
+    position: relative;
+    isolation: isolate;
+    margin: 0;
+    font-family: var(--font-logo);
+    font-weight: 400;
+    line-height: .95;
+    max-width: 92vw;
+    text-wrap: balance;
+  }
+  .gta-text::before {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    color: #000;
+    -webkit-text-stroke: .2em #000;
+    text-shadow: .06em .08em 0 #000;
+  }
+  .gta-text > span {
+    display: block;
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+            color: transparent;
+  }
+
+  /* Título principal */
+  .logo { font-size: clamp(3rem, 11vw, 9.5rem); letter-spacing: .01em; }
+  .logo > span {
+    background-image: linear-gradient(to bottom, #ffffff 0%, #ffffff 52%, #d4d4d4 100%);
+  }
+
+  /* Logo en imagen (logo.png): se adapta al tamaño de pantalla */
+  .logo-img[hidden] { display: none; }
+  .logo-img {
+    display: block;
+    width: min(88vw, 900px);
+    max-height: 42vh;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,.7));
+  }
+
+  /* Subtítulo tipo letrero de misión: amarillo dorado */
+  .date {
+    margin-top: .5em;
+    font-size: clamp(1.7rem, 4.6vw, 3.8rem);
+    letter-spacing: .08em;
+    transform: rotate(-2deg);
+  }
+  .date > span {
+    background-image: linear-gradient(to bottom, #fff3ad 0%, #ffd23f 45%, #e69a00 100%);
+  }
+
+  /* "PRÓXIMAMENTE": pulso lento */
+  .coming {
+    margin: 2.4rem 0 0;
+    padding-left: .55em; /* compensa el letter-spacing para centrarlo ópticamente */
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: clamp(1rem, 2.4vw, 1.8rem);
+    letter-spacing: .55em;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,.9), 2px 2px 0 #000;
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: .3; }
+    50%      { opacity: 1; }
+  }
+
+  /* ---------- Indicador "Cargando..." ---------- */
+  .loading {
+    position: fixed;
+    right: clamp(1rem, 3vw, 2.5rem);
+    bottom: clamp(1rem, 3vh, 2rem);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: clamp(.95rem, 1.6vw, 1.2rem);
+    letter-spacing: .08em;
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(0,0,0,.9);
+  }
+  .spinner {
+    width: 1.7rem;
+    height: 1.7rem;
+    border: .24rem solid rgba(255,255,255,.28);
+    border-top-color: #fff;
+    border-radius: 50%;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.8));
+    animation: spin .9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Respeta a quien prefiere menos movimiento */
+  @media (prefers-reduced-motion: reduce) {
+    .slide.kb, .coming { animation: none; }
+    .coming { opacity: 1; }
+  }
+</style>
+</head>
+
+<body>
+  <!-- Dos capas que se alternan para hacer el crossfade -->
+  <div class="stage" aria-hidden="true">
+    <div class="slide"></div>
+    <div class="slide"></div>
+  </div>
+
+  <div class="vignette"></div>
+
+  <main class="content">
+    <!-- Logo: el script busca logo.png, .jpg, .jpeg o .webp. Si no hay ninguno, se muestra el título en texto. -->
+    <div class="logo-wrap" role="heading" aria-level="1">
+      <img class="logo-img" alt="ciudad estrecho 1" hidden>
+      <div id="logo-fallback" class="gta-text logo" data-text="ciudad estrecho 1" hidden><span>ciudad estrecho 1</span></div>
+    </div>
+    <p  class="gta-text date" data-text="ESTRENO 2027"><span>ESTRENO 2027</span></p>
+    <p  class="coming">PRÓXIMAMENTE</p>
+  </main>
+
+  <div class="loading" role="status">
+    <span>Cargando...</span>
+    <i class="spinner" aria-hidden="true"></i>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- Configuración ---------- */
+  const PREFIX      = 'Photo';          // Photo1, Photo2, Photo3...
+  const EXTENSIONS  = ['jpg', 'jpeg', 'png', 'webp'];   // se prueba en este orden
+  const MAX_PHOTOS  = 200;              // límite de seguridad para la detección
+  const SLIDE_MS    = 5000;             // tiempo entre diapositivas
+  const FADE_MS     = 1500;             // debe coincidir con --fade-time
+
+  const layers = Array.from(document.querySelectorAll('.slide'));
+  const photos = [];           // URLs válidas encontradas, en orden
+  let discoveryDone = false;   // true cuando ya no existen más PhotoN
+  let current = -1;            // índice de la foto en pantalla
+  let activeLayer = -1;        // capa (0 ó 1) que está visible
+
+  /* ---------- Carga con respaldo .jpg -> .png ---------- */
+  function tryLoad(name, exts = EXTENSIONS, i = 0) {
+    return new Promise(resolve => {
+      if (i >= exts.length) return resolve(null);   // ninguna extensión funcionó
+      const url = `${name}.${exts[i]}`;
+      const img = new Image();
+      img.onload  = () => resolve(url);
+      img.onerror = () => tryLoad(name, exts, i + 1).then(resolve);  // reintenta con la siguiente extensión
+      img.src = url;
+    });
+  }
+
+  /* Detecta Photo1, Photo2... hasta que una no exista. La primera foto se
+     muestra en cuanto está lista; el resto se descubre en segundo plano. */
+  async function discover() {
+    for (let n = 1; n <= MAX_PHOTOS; n++) {
+      const url = await tryLoad(PREFIX + n);
+      if (!url) break;
+      photos.push(url);
+      if (photos.length === 1) { show(0); setTimeout(next, SLIDE_MS); }
+    }
+    discoveryDone = true;
+  }
+
+  /* ---------- Mostrar una diapositiva con Ken Burns + crossfade ---------- */
+  const rand = (min, max) => min + Math.random() * (max - min);
+
+  function show(index) {
+    const incoming = layers[(activeLayer + 1) % layers.length];
+    const outgoing = activeLayer >= 0 ? layers[activeLayer] : null;
+
+    // Reinicia la capa entrante (quita clases y fuerza reflow para reiniciar la animación)
+    incoming.classList.remove('active', 'prev', 'kb');
+    incoming.style.backgroundImage = `url("${photos[index]}")`;
+
+    // Movimiento aleatorio: zoom in o zoom out, con desplazamiento suave (±3 %)
+    const zoomIn = Math.random() > 0.35;
+    const [s0, s1] = zoomIn ? [1.1, 1.28] : [1.28, 1.1];
+    incoming.style.setProperty('--s0', s0);
+    incoming.style.setProperty('--s1', s1);
+    incoming.style.setProperty('--x0', rand(-3, 3).toFixed(2) + '%');
+    incoming.style.setProperty('--y0', rand(-2, 2).toFixed(2) + '%');
+    incoming.style.setProperty('--x1', rand(-3, 3).toFixed(2) + '%');
+    incoming.style.setProperty('--y1', rand(-2, 2).toFixed(2) + '%');
+    void incoming.offsetWidth;
+
+    incoming.classList.add('kb', 'active');          // entra fundiéndose por encima
+
+    if (outgoing) {
+      outgoing.classList.remove('active');
+      outgoing.classList.add('prev');                // se queda opaca debajo mientras entra la nueva
+      setTimeout(() => outgoing.classList.remove('prev'), FADE_MS + 100);
+    }
+
+    activeLayer = layers.indexOf(incoming);
+    current = index;
+  }
+
+  /* ---------- Bucle: avanza cada 5 s y vuelve a Photo1 al terminar ---------- */
+  function next() {
+    let n = current + 1;
+    if (n >= photos.length) {
+      if (!discoveryDone) return setTimeout(next, 300); // aún buscando más fotos: espera
+      n = 0;                                            // no hay más: bucle infinito
+    }
+    show(n);
+    setTimeout(next, SLIDE_MS);
+  }
+
+  discover();
+
+  /* Logo: prueba logo.png, .jpg, .jpeg y .webp; si no hay ninguno, muestra el título en texto */
+  const logoImg = document.querySelector('.logo-img');
+  tryLoad('logo', ['png', 'jpg', 'jpeg', 'webp']).then(url => {
+    if (url) { logoImg.src = url; logoImg.hidden = false; }
+    else { logoImg.remove(); document.getElementById('logo-fallback').hidden = false; }
+  });
+
+  /* Diagnóstico: avisa en la consola (F12) si Pricedown no se pudo cargar */
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load('1em Pricedown', 'ciudad').then(list => {
+      if (!list.length) console.warn('Pricedown no encontrada: se usa Anton. Pon pricedown.ttf junto a index.html.');
+    });
+  }
+})();
+</script>
+</body>
+</html>
