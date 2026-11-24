@@ -203,6 +203,17 @@ html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .ctext{margin:1.4rem 0 0;padding-left:.4em;font:400 1.1rem var(--ui);letter-spacing:.4em;color:#eee}
 .csub{margin:.8rem 0 0;font:400 .8rem var(--txt);color:#888;min-height:1.2em}
 
+/* Spinner de carga normal + imágenes con ligero desenfoque */
+.ring{width:3rem;height:3rem;border-radius:50%;border:.28rem solid rgba(255,255,255,.18);border-top-color:#fff;animation:sp .9s linear infinite}
+.slide{filter:blur(2px) saturate(1.15) contrast(1.06)}
+.lg{filter:blur(1px) drop-shadow(0 6px 14px rgba(0,0,0,.7))}
+.lgtxt{filter:blur(.8px)}
+@keyframes reveal{from{opacity:0;filter:blur(18px);transform:scale(1.25)}to{opacity:1;filter:blur(1px) drop-shadow(0 6px 14px rgba(0,0,0,.7));transform:none}}
+.card{position:relative;isolation:isolate;background:none}
+.card::before,.card::after{content:"";position:absolute;inset:-4px;z-index:-1;pointer-events:none}
+.card::before{z-index:-2;background:var(--c,var(--ph)) center/cover;filter:blur(2px)}
+.card::after{inset:0;background:linear-gradient(to top,rgba(0,0,0,.92),rgba(0,0,0,.1) 70%)}
+
 @media(max-width:860px){
  .pane{overflow:auto;grid-template-columns:1fr!important;grid-template-rows:none;align-content:start}
  .box,.card{overflow:visible}.card{min-height:16rem}.mapbox{height:60vw}
@@ -220,7 +231,7 @@ html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 <!-- PANTALLA DE TÍTULO -->
 <!-- INTRO: animación de inicio + carga -->
 <section id="intro" class="screen on">
-  <div class="snails"><svg class="sn" viewBox="-17 -19 38 38"><path d="M0 0a2 2 0 0 1 4 0a4 4 0 0 1-8 0a6 6 0 0 1 12 0a8 8 0 0 1-16 0a10 10 0 0 1 20 0"/></svg><svg class="sn" viewBox="-17 -19 38 38"><path d="M0 0a2 2 0 0 1 4 0a4 4 0 0 1-8 0a6 6 0 0 1 12 0a8 8 0 0 1-16 0a10 10 0 0 1 20 0"/></svg><svg class="sn" viewBox="-17 -19 38 38"><path d="M0 0a2 2 0 0 1 4 0a4 4 0 0 1-8 0a6 6 0 0 1 12 0a8 8 0 0 1-16 0a10 10 0 0 1 20 0"/></svg></div>
+  <div class="ring"></div>
   <p class="ctext">Cargando...</p>
 </section>
 
@@ -295,7 +306,7 @@ html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
 <!-- PANTALLA DE CARGA -->
 <section id="load" class="screen">
-  <div class="snails"><svg class="sn" viewBox="-17 -19 38 38"><path d="M0 0a2 2 0 0 1 4 0a4 4 0 0 1-8 0a6 6 0 0 1 12 0a8 8 0 0 1-16 0a10 10 0 0 1 20 0"/></svg><svg class="sn" viewBox="-17 -19 38 38"><path d="M0 0a2 2 0 0 1 4 0a4 4 0 0 1-8 0a6 6 0 0 1 12 0a8 8 0 0 1-16 0a10 10 0 0 1 20 0"/></svg><svg class="sn" viewBox="-17 -19 38 38"><path d="M0 0a2 2 0 0 1 4 0a4 4 0 0 1-8 0a6 6 0 0 1 12 0a8 8 0 0 1-16 0a10 10 0 0 1 20 0"/></svg></div>
+  <div class="ring"></div>
   <p class="ctext">Cargando...</p>
   <p class="csub" id="tip"></p>
 </section>
