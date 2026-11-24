@@ -222,6 +222,20 @@ html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .card .btns{flex-direction:column}.card .btn{text-align:center}
 .top .lg{filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}.top .lgtxt{filter:none}
 
+/* Reproductor de música en Ajustes */
+.player{display:none;text-align:center}.mus .player{display:block}.mus .pvbox{display:none}
+.disc{position:relative;width:min(100%,13rem);aspect-ratio:1;margin:.4rem auto 1rem;border-radius:50%;background:repeating-radial-gradient(circle,#f7c600 0 2px,#e2ad00 2px 4px);box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 0 0 5px rgba(0,0,0,.22);animation:sp 4s linear infinite;animation-play-state:paused}
+.disc.on{animation-play-state:running}
+.disc::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(255,255,255,.5),transparent 12%,transparent 45%,rgba(255,255,255,.4) 55%,transparent 67%)}
+.disc i{position:absolute;inset:32%;border-radius:50%;background:radial-gradient(circle,#050505 0 12%,#ff4f9a 13% 55%,#c2306f 56% 100%);box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+.disc i::after{content:"";position:absolute;top:8%;left:50%;width:.4rem;height:.4rem;margin-left:-.2rem;border-radius:50%;background:#fff}
+.mbar{height:5px;background:rgba(255,255,255,.25);cursor:pointer;margin:.8rem 0 .3rem}.mbar i{display:block;height:100%;width:0;background:var(--gold)}
+.mtime{display:flex;justify-content:space-between;font-size:.75rem;color:#bbb}
+.player .btns{justify-content:center}
+.row.now{border-left:3px solid var(--gold);background:rgba(255,210,63,.16)}
+.row.now>span:first-child::before{content:"♪ ";color:var(--gold)}
+.row .sub{font-size:.8rem;opacity:.75}
+
 @media(max-width:860px){
  #p-jugar.on{flex-direction:column;align-items:stretch;overflow:auto}
  #p-jugar .card{height:auto;aspect-ratio:auto;min-height:21rem}
@@ -381,14 +395,35 @@ tryLoad('logo', ['png', 'jpg', 'jpeg', 'webp']).then(u => $$('.lg').forEach(im =
 
 /* ---------- Sonidos de menú: secos, cortos, sin música ni eco ---------- */
 const A = { ctx: null, master: null, noise: null, on: true, hov: 0 };
-/* Música: ESTRECHOCIUDAD.mp3 (más adelante será una lista de canciones) */
-const mus = new Audio('ESTRECHOCIUDAD.mp3'); mus.loop = true;
-const MS = { mode: 0, vol: 70, on: 1 };   // modo: 0 Siempre · 1 Solo en ajustes · 2 No escuchar
-let musErr = false;
-mus.onerror = () => { if (!musErr) { musErr = true; toast('No se encuentra ESTRECHOCIUDAD.mp3 en la carpeta'); } };
+/* Música: lista de reproducción (añade más canciones aquí; al acabar la lista vuelve a empezar) */
+const PL = [{ file: 'ESTRECHOCIUDAD.mp3', name: 'Estrecho-Ciudad', sub: 'Tema principal' }];
+let ti = 0, musErr = false;
+const mus = new Audio(PL[0].file);
+const MS = { mode: 0, vol: 50, on: 1 };   // modo: 0 Siempre · 1 Solo en ajustes · 2 No escuchar
+const fmt = t => isFinite(t) ? Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0') : '0:00';
+mus.onerror = () => { if (!musErr) { musErr = true; toast('No se encuentra ' + PL[ti].file + ' en la carpeta'); } };
+mus.onended = () => { if (PL.length > 1) setTrack(ti + 1); else { mus.currentTime = 0; mus.play().catch(() => {}); } };
+mus.onplay = mus.onpause = () => updatePlayer();
+mus.ontimeupdate = () => {
+  const f = $('#mbar i'); if (!f) return;
+  f.style.width = (mus.duration ? mus.currentTime / mus.duration * 100 : 0) + '%';
+  $('#mcur').textContent = fmt(mus.currentTime); $('#mdur').textContent = fmt(mus.duration);
+};
+function setTrack(i) {
+  ti = (i + PL.length) % PL.length; musErr = false; mus.src = PL[ti].file; updatePlayer();
+  const pr = mus.play(); if (pr) pr.catch(() => {});
+}
+function updatePlayer() {
+  const n = $('#mname'); if (!n) return;
+  n.textContent = PL[ti].name; $('#msub').textContent = PL[ti].sub;
+  $('#mplay').textContent = mus.paused ? '►' : '❚❚';
+  $('#disc').classList.toggle('on', !mus.paused);
+  $$('#p-ajustes .row[data-k]').forEach(r => r.classList.toggle('now', +r.dataset.k === ti));
+}
 function musicApply() {
   mus.volume = MS.vol / 100;
-  const ok = MS.on && document.body.className === 'menu' && (MS.mode === 0 || (MS.mode === 1 && tab === 'ajustes'));
+  const scr = document.body.className;
+  const ok = MS.on && MS.mode !== 2 && (scr === 'title' || scr === 'menu') && (MS.mode === 0 || (scr === 'menu' && tab === 'ajustes'));
   if (ok) { const pr = mus.play(); if (pr) pr.catch(() => {}); } else mus.pause();
 }
 function audioStart() {
@@ -421,7 +456,7 @@ const sfx = {
   tab()   { tick(1800, .035, .35); blip(260, 120, .09, .26, 'triangle'); },                               // clak
   enter() { tick(1500, .04, .4); blip(200, 90, .12, .3, 'triangle'); }                                    // clak grave
 };
-['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, audioStart));
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { audioStart(); musicApply(); }));   // si el navegador bloqueó el autoplay, arranca con el primer gesto
 $('#snd').onclick = e => {
   e.stopPropagation(); A.on = !A.on; mus.muted = !A.on; e.currentTarget.classList.toggle('off', !A.on);
   if (A.master) A.master.gain.setTargetAtTime(A.on ? .8 : 0, A.ctx.currentTime, .05);
@@ -466,7 +501,7 @@ const itick = setInterval(() => {
 }, 40);
 function endIntro() {
   setTimeout(() => {
-    $('#title').classList.add('on'); document.body.className = 'title';
+    $('#title').classList.add('on'); document.body.className = 'title'; musicApply();
     intro.classList.add('out');
     setTimeout(() => intro.classList.remove('on', 'out'), 1500);
   }, 500);
@@ -534,12 +569,14 @@ function settings(id, groups, onChange) {
   const [side, rows] = p.children; let g = names[0];
   side.innerHTML = names.map(n => `<button>${n.toUpperCase()}</button>`).join('');
   const draw = n => {
-    g = n;
+    g = n; p.classList.toggle('mus', n === 'Música');
     [...side.children].forEach((b, i) => b.classList.toggle('on', names[i] === n));
-    rows.innerHTML = groups[n].map(([l, t, a, b]) => `<div class="row"><span>${l}</span><div class="val">${
+    rows.innerHTML = groups[n].map(([l, t, a, b]) => `<div class="row"${t === 'k' ? ` data-k="${b}"` : ''}><span>${l}</span><div class="val">${
       t === 's' ? `<button data-d="-1">◄</button><span data-v>${a[b]}</span><button data-d="1">►</button>`
       : t === 'b' ? `<div class="bar"><i style="width:${a}%"></i></div><span data-v>${a}</span>`
+      : t === 'k' ? `<span class="sub">${a}</span>`
       : `<div class="tog${a ? ' on' : ''}"></div>`}</div></div>`).join('');
+    updatePlayer();
   };
   side.onclick = e => { const i = [...side.children].indexOf(e.target.closest('button')); if (i >= 0) draw(names[i]); };
   rows.onclick = e => {
@@ -552,7 +589,7 @@ function settings(id, groups, onChange) {
       d[2] = Math.max(0, Math.min(100, Math.round((e.clientX - b.left) / b.width * 100)));
       r.querySelector('i').style.width = d[2] + '%'; r.querySelector('[data-v]').textContent = d[2];
     }
-    if (onChange) onChange(groups, g);
+    if (onChange) onChange(groups, g, d);
   };
   draw(g);
 }
@@ -560,11 +597,26 @@ settings('p-ajustes', {
   'Gráficos': [['Calidad', 's', ['Baja', 'Media', 'Alta', 'Ultra'], 2], ['Resolución', 's', ['1280×720', '1920×1080', '2560×1440', '3840×2160'], 1], ['Brillo', 'b', 70], ['Distancia de dibujado', 'b', 60], ['Sombras', 's', ['Normales', 'Suaves', 'Muy suaves'], 1], ['V-Sync', 't', 1], ['Trazado de rayos', 't', 0]],
   'Sonido': [['Volumen general', 'b', 80], ['Música', 'b', 55], ['Efectos', 'b', 75], ['Voces', 'b', 90], ['Emisora de radio', 's', ['Apagada', 'Radio Costa', 'Rock Urbano', 'Trap FM'], 1], ['Audio dinámico', 't', 1]],
   'Controles': [['Sensibilidad', 'b', 50], ['Esquema', 's', ['Clásico', 'Alternativo'], 0], ['Apuntado', 's', ['Asistido', 'Libre'], 0], ['Invertir eje Y', 't', 0], ['Vibración', 't', 1]],
-  'Música': [['Reproducir ESTRECHOCIUDAD.mp3', 't', 1], ['Volumen', 'b', 70], ['Modo de escucha', 's', ['Siempre', 'Solo en ajustes', 'No escuchar'], 0]]
-}, (gr, g) => {
+  'Música': [...PL.map((t, i) => [t.name, 'k', t.sub, i]), ['Volumen', 'b', 50], ['Modo de escucha', 's', ['Siempre', 'Solo en ajustes', 'No escuchar'], 0]]
+}, (gr, g, d) => {
   if (g !== 'Música') return;
-  const m = gr['Música']; MS.on = m[0][2]; MS.vol = m[1][2]; MS.mode = m[2][3]; musicApply();
+  const m = gr['Música'], n = PL.length;
+  MS.vol = m[n][2]; MS.mode = m[n + 1][3];
+  if (d && d[1] === 'k') { MS.on = 1; setTrack(d[3]); }
+  musicApply(); updatePlayer();
 });
+/* Panel derecho de Ajustes > Música: disco amarillo girando + controles */
+(() => {
+  const third = $('#p-ajustes').children[2];
+  third.innerHTML = `<div class="pvbox">${third.innerHTML}</div><div class="player"><div class="disc" id="disc"><i></i></div>
+    <h3 id="mname"></h3><p id="msub"></p><div class="mbar" id="mbar"><i></i></div><div class="mtime"><span id="mcur">0:00</span><span id="mdur">0:00</span></div>
+    <div class="btns"><button class="btn" id="mprev">|◄</button><button class="btn pri" id="mplay">►</button><button class="btn" id="mnext">►|</button></div></div>`;
+  $('#mplay').onclick = () => { MS.on = MS.on ? 0 : 1; musicApply(); updatePlayer(); };
+  $('#mprev').onclick = () => { MS.on = 1; setTrack(ti - 1); musicApply(); };
+  $('#mnext').onclick = () => { MS.on = 1; setTrack(ti + 1); musicApply(); };
+  $('#mbar').onclick = e => { const b = e.currentTarget.getBoundingClientRect(); if (mus.duration) mus.currentTime = (e.clientX - b.left) / b.width * mus.duration; };
+  updatePlayer();
+})();
 settings('p-opciones', {
   'Juego': [['Dificultad', 's', ['Fácil', 'Normal', 'Difícil'], 1], ['Idioma', 's', ['Español', 'English', 'Français', 'Deutsch'], 0], ['Unidades', 's', ['Métrico', 'Imperial'], 0], ['Autoguardado', 't', 1], ['Cámara automática', 't', 1]],
   'Interfaz': [['Radar', 's', ['Completo', 'Simple', 'Oculto'], 0], ['Subtítulos', 't', 1], ['Mostrar consejos', 't', 1], ['Marcadores de misión', 't', 1], ['Tamaño del HUD', 'b', 50]]
@@ -604,6 +656,28 @@ addEventListener('keydown', e => {
     if (/^(q|ArrowLeft)$/i.test(k)) go(t[(i + 4) % 5]);
   }
 });
+})();
+</script>
+<script>
+/* Favicon: busca favicon.ico/.png/.svg/.jpg... en la carpeta y, si no hay, usa el logo */
+(() => {
+  const mime = { ico: 'image/x-icon', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' };
+  const cand = [['favicon', ['ico', 'png', 'svg', 'jpg', 'jpeg', 'webp']], ['logo', ['png', 'jpg', 'jpeg', 'webp']]];
+  const find = (i = 0, j = 0) => new Promise(ok => {
+    if (i >= cand.length) return ok(null);
+    const [n, exts] = cand[i];
+    if (j >= exts.length) return find(i + 1, 0).then(ok);
+    const u = `${n}.${exts[j]}`, im = new Image();
+    im.onload = () => ok(u);
+    im.onerror = () => find(i, j + 1).then(ok);
+    im.src = u;
+  });
+  find().then(u => {
+    if (!u) return;
+    let l = document.querySelector('link[rel~="icon"]');
+    if (!l) { l = document.createElement('link'); l.rel = 'icon'; document.head.appendChild(l); }
+    l.type = mime[u.split('.').pop()]; l.href = u + '?v=2';   // ?v=2 fuerza a recargar el icono si estaba en caché
+  });
 })();
 </script>
 </body>
