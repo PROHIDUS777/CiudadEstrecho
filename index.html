@@ -226,6 +226,10 @@ html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .player{display:none;text-align:center}.mus .player{display:block}.mus .pvbox{display:none}
 .disc{position:relative;width:min(100%,13rem);aspect-ratio:1;margin:.4rem auto 1rem;border-radius:50%;background:repeating-radial-gradient(circle,#f7c600 0 2px,#e2ad00 2px 4px);box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 0 0 5px rgba(0,0,0,.22);animation:sp 4s linear infinite;animation-play-state:paused}
 .disc.on{animation-play-state:running}
+.disc.dark{background:radial-gradient(circle,transparent 0 61%,rgba(212,175,55,.75) 62% 63.5%,transparent 64.5%),repeating-radial-gradient(circle,#0b0b0b 0 2px,#1c1c1c 2px 4px);box-shadow:0 10px 30px rgba(0,0,0,.65),inset 0 0 0 5px #c9a227}
+.disc.dark::before{background:conic-gradient(rgba(255,215,110,.5),transparent 12%,transparent 45%,rgba(255,215,110,.4) 55%,transparent 67%)}
+.disc.dark i{background:radial-gradient(circle,#050505 0 12%,#e6c14a 13% 55%,#a8821f 56% 100%);box-shadow:0 0 0 3px rgba(0,0,0,.5)}
+.disc.dark i::after{background:#111}
 .disc::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(255,255,255,.5),transparent 12%,transparent 45%,rgba(255,255,255,.4) 55%,transparent 67%)}
 .disc i{position:absolute;inset:32%;border-radius:50%;background:radial-gradient(circle,#050505 0 12%,#ff4f9a 13% 55%,#c2306f 56% 100%);box-shadow:0 0 0 3px rgba(0,0,0,.35)}
 .disc i::after{content:"";position:absolute;top:8%;left:50%;width:.4rem;height:.4rem;margin-left:-.2rem;border-radius:50%;background:#fff}
@@ -396,7 +400,10 @@ tryLoad('logo', ['png', 'jpg', 'jpeg', 'webp']).then(u => $$('.lg').forEach(im =
 /* ---------- Sonidos de menú: secos, cortos, sin música ni eco ---------- */
 const A = { ctx: null, master: null, noise: null, on: true, hov: 0 };
 /* Música: lista de reproducción (añade más canciones aquí; al acabar la lista vuelve a empezar) */
-const PL = [{ file: 'ESTRECHOCIUDAD.mp3', name: 'Estrecho-Ciudad', sub: 'Tema principal' }];
+const PL = [
+  { file: 'ESTRECHOCIUDAD.mp3', name: 'Estrecho-Ciudad', sub: 'Tema principal' },               // disco amarillo
+  { file: 'Sawt Al-Derb.mp3', name: 'Sawt Al-Derb', sub: 'Banda sonora', dark: true }        // disco negro y dorado
+];
 let ti = 0, musErr = false;
 const mus = new Audio(PL[0].file);
 const MS = { mode: 0, vol: 50, on: 1 };   // modo: 0 Siempre · 1 Solo en ajustes · 2 No escuchar
@@ -417,7 +424,7 @@ function updatePlayer() {
   const n = $('#mname'); if (!n) return;
   n.textContent = PL[ti].name; $('#msub').textContent = PL[ti].sub;
   $('#mplay').textContent = mus.paused ? '►' : '❚❚';
-  $('#disc').classList.toggle('on', !mus.paused);
+  $('#disc').classList.toggle('on', !mus.paused); $('#disc').classList.toggle('dark', !!PL[ti].dark);
   $$('#p-ajustes .row[data-k]').forEach(r => r.classList.toggle('now', +r.dataset.k === ti));
 }
 function musicApply() {
