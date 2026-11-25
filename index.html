@@ -7,7 +7,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CIUDAD ESTRECHO 1 </title>
+<title>CIUDAD ESTRECHO 1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@400;600&family=Oswald:wght@400;500&display=swap" rel="stylesheet">
@@ -230,6 +230,10 @@ html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .disc.dark::before{background:conic-gradient(rgba(255,215,110,.5),transparent 12%,transparent 45%,rgba(255,215,110,.4) 55%,transparent 67%)}
 .disc.dark i{background:radial-gradient(circle,#050505 0 12%,#e6c14a 13% 55%,#a8821f 56% 100%);box-shadow:0 0 0 3px rgba(0,0,0,.5)}
 .disc.dark i::after{background:#111}
+.disc.blue{background:radial-gradient(circle,transparent 0 61%,rgba(236,218,170,.8) 62% 63.5%,transparent 64.5%),repeating-radial-gradient(circle,#1e4fd6 0 2px,#1a42b4 2px 4px);box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 0 0 5px #e8d5a3}
+.disc.blue::before{background:conic-gradient(rgba(255,240,200,.5),transparent 12%,transparent 45%,rgba(255,240,200,.4) 55%,transparent 67%)}
+.disc.blue i{background:radial-gradient(circle,#050505 0 12%,#eddaa6 13% 55%,#cdb67c 56% 100%);box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+.disc.blue i::after{background:#1e4fd6}
 .disc::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(255,255,255,.5),transparent 12%,transparent 45%,rgba(255,255,255,.4) 55%,transparent 67%)}
 .disc i{position:absolute;inset:32%;border-radius:50%;background:radial-gradient(circle,#050505 0 12%,#ff4f9a 13% 55%,#c2306f 56% 100%);box-shadow:0 0 0 3px rgba(0,0,0,.35)}
 .disc i::after{content:"";position:absolute;top:8%;left:50%;width:.4rem;height:.4rem;margin-left:-.2rem;border-radius:50%;background:#fff}
@@ -402,7 +406,8 @@ const A = { ctx: null, master: null, noise: null, on: true, hov: 0 };
 /* Música: lista de reproducción (añade más canciones aquí; al acabar la lista vuelve a empezar) */
 const PL = [
   { file: 'ESTRECHOCIUDAD.mp3', name: 'Estrecho-Ciudad', sub: 'Tema principal' },               // disco amarillo
-  { file: 'Sawt Al-Derb.mp3', name: 'Sawt Al-Derb', sub: 'Banda sonora', dark: true }        // disco negro y dorado
+  { file: 'Sawt Al-Derb.mp3', name: 'Sawt Al-Derb', sub: 'Banda sonora', dark: true },        // disco negro y dorado
+  { file: 'PIEDRA.mp3', name: 'Con la misma piedra, y lo sabes', sub: 'Banda sonora', blue: true }   // disco azul y amarillo beige
 ];
 let ti = 0, musErr = false;
 const mus = new Audio(PL[0].file);
@@ -424,14 +429,29 @@ function updatePlayer() {
   const n = $('#mname'); if (!n) return;
   n.textContent = PL[ti].name; $('#msub').textContent = PL[ti].sub;
   $('#mplay').textContent = mus.paused ? '►' : '❚❚';
-  $('#disc').classList.toggle('on', !mus.paused); $('#disc').classList.toggle('dark', !!PL[ti].dark);
+  $('#disc').classList.toggle('on', !mus.paused); $('#disc').classList.toggle('dark', !!PL[ti].dark); $('#disc').classList.toggle('blue', !!PL[ti].blue);
   $$('#p-ajustes .row[data-k]').forEach(r => r.classList.toggle('now', +r.dataset.k === ti));
 }
+/* La música solo suena en estas pantallas (inicio, menú/ajustes y pausa). En el juego solo suenan las emisoras. */
+const MENUS = ['title', 'menu', 'pause'];
+let fadeT = 0, dir = 0;   // dir: 1 = entrando, -1 = saliendo, 0 = nada
+function fadeTo(v, ms, d, done) {
+  clearInterval(fadeT); dir = d;
+  const v0 = mus.volume, st = performance.now();
+  fadeT = setInterval(() => {
+    const k = Math.min(1, (performance.now() - st) / ms);
+    mus.volume = Math.max(0, Math.min(1, v0 + (v - v0) * k));
+    if (k >= 1) { clearInterval(fadeT); dir = 0; if (done) done(); }
+  }, 30);
+}
 function musicApply() {
-  mus.volume = MS.vol / 100;
-  const scr = document.body.className;
-  const ok = MS.on && MS.mode !== 2 && (scr === 'title' || scr === 'menu') && (MS.mode === 0 || (scr === 'menu' && tab === 'ajustes'));
-  if (ok) { const pr = mus.play(); if (pr) pr.catch(() => {}); } else mus.pause();
+  const vol = MS.vol / 100, scr = document.body.className;
+  const ok = MS.on && MS.mode !== 2 && MENUS.includes(scr) && (MS.mode === 0 || (scr !== 'title' && tab === 'ajustes'));
+  if (ok) {
+    if (mus.paused) { mus.volume = 0; const pr = mus.play(); if (pr) pr.catch(() => {}); fadeTo(vol, 800, 1); }
+    else if (dir === -1) fadeTo(vol, 400, 1);   // volvió a un menú: cancela el fundido de salida
+    else if (dir === 0) mus.volume = vol;
+  } else if (!mus.paused && dir !== -1) fadeTo(0, 500, -1, () => mus.pause());   // sale del menú (p. ej. entra al juego)
 }
 function audioStart() {
   if (A.ctx) return A.ctx.resume();
